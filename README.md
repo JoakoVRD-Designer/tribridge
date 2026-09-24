@@ -1,0 +1,148 @@
+# tribridge
+
+**Claude Code ⇄ Codex ⇄ Antigravity.** Un solo núcleo que permite que cualquiera de los tres
+agentes de código le delegue trabajo a los otros dos, o les pida una revisión independiente,
+y que después verifique el resultado.
+
+```
+          ┌──────────── tribridge (Node, sin dependencias) ────────────┐
+Claude Code ──►  delegate / review / job  ──►  codex exec · agy -p · claude -p
+Codex       ──►        (mismo CLI)        ──►  (el que no seas tú)
+Antigravity ──►                           ──►
+          └──── digest + pie "[tribridge] files changed (git): …" ─────┘
+```
+
+Inspirado en [antigravity-for-claude-code](https://github.com/yuting0624/antigravity-for-claude-code)
+(MIT), que solo va en una dirección (Claude → Gemini) y depende de bash.
+Esto es una reimplementación que sirve en las tres direcciones.
+
+## Qué mejora respecto al original
+
+| | original | tribridge |
+|---|---|---|
+| Direcciones | Claude → agy | cualquiera → cualquiera (Claude, Codex, agy) |
+| Revisión cruzada | 1 modelo | los otros 2 **en paralelo**, sin ver la opinión del otro |
+| Windows nativo | no recomendado (bash + `timeout`, agy se colgaba) | **sí**: Node puro, sin shell, sin WSL |
+| ¿La escritura pasó de verdad? | hay que revisar a mano | pie automático con los archivos que **git** ve cambiados, y aviso si un write no cambió nada o un read sí |
+| Tokens del agente padre | se heredaban (medido: `CLAUDE_CODE_MESSAGING_TOKEN` llegaba a Gemini) | se eliminan antes de lanzar al agente hijo |
+| Delegación en cadena | sin límite | un delegado no puede volver a delegar (exit 14) |
+| Prompts largos | argv (límite ~32K en Windows) | stdin para claude/codex; archivo temporal para agy |
+| Subagente de Claude | filtro de Bash en bash | filtro en Node que falla cerrado y bloquea `$VAR`, `$(…)`, pipes y redirecciones |
+
+## Requisitos
+
+- Node ≥ 18
+- Al menos **dos** de: [Claude Code](https://claude.com/claude-code), [Codex CLI](https://github.com/openai/codex),
+  [Antigravity CLI](https://antigravity.google/docs/cli-using) (`agy`), instalados y con la sesión iniciada.
+
+## Instalación
+
+```powershell
+cd C:\Users\pc\tribridge
+npm install -g .            # pone `tribridge` en el PATH (para Codex y agy)
+tribridge doctor            # ¿están los 3 agentes, con sesión y con el skill?
+tribridge install codex     # ~/.codex/skills/tribridge  → enlace a este repo
+tribridge install agy       # ~/.gemini/config/skills.json  += este repo
+```
+
+**Claude Code** (los plugins se instalan desde dentro de Claude Code):
+
+```
+/plugin marketplace add C:\Users\pc\tribridge
+/plugin install tribridge@tribridge
+```
+
+Después reinicia Claude Code. El plugin trae el skill, los comandos `/tribridge:delegate`,
+`/tribridge:review`, `/tribridge:jobs` y `/tribridge:doctor`, el subagente `tribridge-delegate`
+y un hook de inicio de sesión que le recuerda a Claude que puede delegar.
+Para desactivar ese recordatorio: `TRIBRIDGE_POLICY=off`.
+
+Desinstalar: `tribridge uninstall all`, `/plugin uninstall tribridge@tribridge` y `npm uninstall -g tribridge`.
+
+Los skills quedan como **enlaces** al repo: si editas `skills/tribridge/SKILL.md`, los tres hosts ven el cambio.
+
+## Uso
+
+```bash
+# delegar una tarea (por defecto solo lectura)
+tribridge delegate --to agy --tier fast "Lista todas las llamadas a parseConfig; solo file:line."
+
+# que edite archivos
+tribridge delegate --to codex --mode write --dir . "Agrega tests para src/cart.ts: carrito vacío y descuento."
+
+# revisión independiente del diff actual por los OTROS dos agentes, en paralelo
+tribridge review
+tribridge review --base main --adversarial
+
+# tareas largas en segundo plano
+tribridge job start --to agy --tier deep "…"
+tribridge job status
+tribridge job result <id>
+```
+
+Dentro de Claude Code, Codex o Antigravity no hace falta escribir comandos: pídelo en lenguaje
+natural ("pídele a Codex una segunda opinión sobre este diff", "que Gemini busque en la web…")
+y el skill `tribridge` hace el resto.
+
+### Tiers
+
+| tier | claude | codex | agy |
+|---|---|---|---|
+| `fast` | haiku | effort low | Gemini 3.8 Flash (Low) |
+| `balanced` (defecto) | sonnet | effort medium | Gemini 3.8 Flash (High) |
+| `deep` (defecto en `review`) | opus, effort high | effort high | Gemini 3.1 Pro (High) |
+
+Se cambian en `~/.tribridge/config.json` (`tribridge config` muestra la ruta y los valores).
+`--model` y `--effort` sobrescriben el tier para una sola llamada.
+
+### Modos: qué impone cada agente (medido, sin maquillar)
+
+| modo | claude | codex | agy |
+|---|---|---|---|
+| `read` | **impuesto**: `dontAsk` + solo Read/Glob/Grep/Web | **impuesto**: sandbox `read-only` | **instrucción** + aviso de git (ver abajo) |
+| `write` | impuesto: además Edit/Write; nada de shell | sandbox `workspace-write` | escribe si la carpeta está en `trustedWorkspaces` o tiene una regla `write_file(<dir>)`; si no, exit 15 |
+| `yolo` | `bypassPermissions` | sin sandbox | `--dangerously-skip-permissions` |
+
+`yolo` aprueba **todo en toda la máquina**, no solo en `--dir`. Úsalo solo en una rama desechable.
+
+**agy no tiene un modo de solo lectura que se pueda imponer en modo no interactivo.**
+Medido con agy 1.2.9: con `trustedWorkspaces: ["C:\\Users\\pc"]`, agy escribe sin pedir permiso,
+y `--mode plan` hace que devuelva una respuesta vacía para cualquier tarea. Por eso `tribridge`
+le antepone una instrucción de solo lectura (en las pruebas la respetó 2 de 2 veces), y el pie de
+git avisa si igual cambió algo. Si quieres que agy de verdad no pueda escribir, saca tu carpeta
+personal de `trustedWorkspaces` en `~/.gemini/antigravity-cli/settings.json`.
+
+### Códigos de salida
+
+`0` ok · `1` uso · `2` falló el agente · `3` respuesta vacía · `10` cuota o límite de uso · `11` sin sesión ·
+`12` timeout · `13` no se encuentra la CLI · `14` delegación anidada rechazada · `15` permiso denegado
+
+Cada llamada deja en stderr una línea `TRIBRIDGE_USAGE {…}` con el agente, el modelo, el tiempo y los tokens.
+Con `TRIBRIDGE_USAGE_LOG=<archivo>` (o `usageLog` en la config) además se guarda en ese archivo.
+
+## Detalles de Windows (medidos en esta máquina)
+
+- `agy -p` lanzado desde Node, con stdin cerrado y sin shell, **no se cuelga**. El cuelgue del
+  original venía de lanzarlo desde Git Bash.
+- El sandbox "elevated" de Codex **no puede crear procesos** cuando a Codex lo lanza otro programa:
+  todos los comandos fallan con `helper_unknown_error`. `tribridge` le pasa
+  `-c windows.sandbox="unelevated"`, que funciona y respeta igual `--sandbox`.
+  Se cambia con `codexWindowsSandbox` en la config.
+- Los shims `.cmd` de npm no se ejecutan a través de `cmd.exe`: `tribridge` lee el shim y lanza
+  directamente el `.exe` o el `.js`, así el prompt nunca pasa por el escapado de cmd.
+
+## Pruebas
+
+```bash
+npm test     # 19 pruebas con agentes falsos: sin red y sin gastar tokens
+```
+
+Probado también contra los agentes reales (claude 2.1.281, codex 0.156.1, agy 1.2.9):
+
+- revisión cruzada de un diff con dos bugs puestos a propósito: Codex y Gemini encontraron los dos, cada uno por su cuenta, en 31 s;
+- escritura real con Codex y con agy, con el pie de git correcto;
+- delegación de lectura a Claude.
+
+## Licencia
+
+MIT. Ver [LICENSE](LICENSE).
