@@ -1,6 +1,6 @@
 {
   "name": "tribridge",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Delegate work to, and get independent reviews from, Claude Code and Google Antigravity (Gemini) from inside Codex.",
   "author": { "name": "JoakoVRD-Designer" },
   "homepage": "https://github.com/JoakoVRD-Designer/tribridge",

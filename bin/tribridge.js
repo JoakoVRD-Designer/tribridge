@@ -136,6 +136,7 @@ function printResult(r, o, header) {
   if (r.text) lines.push(r.text.trimEnd());
   if (r.kind) lines.push(`[tribridge] ERROR ${r.kind}: ${r.detail || ''}`);
   for (const w of r.warnings || []) lines.push(`[tribridge] warning: ${w}`);
+  if (r.workspace) lines.push(`[tribridge] workspace: ${r.workspace}`);
   if (r.changes) lines.push(`[tribridge] files changed (git): ${r.changes.length ? r.changes.join(', ') : 'none'}`);
   process.stdout.write(`${lines.join('\n')}\n`);
 }

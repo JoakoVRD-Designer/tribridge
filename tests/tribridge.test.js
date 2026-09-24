@@ -140,6 +140,20 @@ test('agy denied write -> exit 15 with the fix in the message', () => {
   assert.match(r.stdout, /write_file/);
 });
 
+test('a transient network drop is retried once', () => {
+  const r = cli(['delegate', '--to', 'codex', 'x'], { kind: 'codex', behavior: 'flaky' });
+  assert.strictEqual(r.status, 0, r.stdout + r.stderr);
+  assert.match(r.stdout, /DONE/);
+  assert.match(r.stdout, /retried once/);
+});
+
+test('agy without yolo is told to use file tools, not the terminal', () => {
+  const w = adapters.agy.build({ prompt: 'p', mode: 'write', tier: 'fast', timeoutSec: 600 }, DEFAULTS);
+  assert.match(w.args[w.args.length - 1], /^Terminal commands are not available/);
+  const y = adapters.agy.build({ prompt: 'p', mode: 'yolo', tier: 'fast', timeoutSec: 600 }, DEFAULTS);
+  assert.strictEqual(y.args[y.args.length - 1], 'p');
+});
+
 test('a hung agent is killed at --timeout -> exit 12', () => {
   const t0 = Date.now();
   const r = cli(['delegate', '--to', 'codex', '--timeout', '2s', 'x'], { kind: 'codex', behavior: 'hang' });
