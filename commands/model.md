@@ -1,5 +1,5 @@
 ---
-description: See or switch which model Claude, Codex and Antigravity (Gemini) use when tribridge delegates to them.
+description: See or switch which model Claude Code, Codex and Antigravity (Gemini) use when tribridge delegates to them.
 argument-hint: "[<agent> <model> [--tier fast|balanced|deep|all] [--effort <level>]] | list [agent] | reset [agent]"
 ---
 

@@ -7,7 +7,7 @@
  */
 function isAllowed(cmd) {
   const s = String(cmd).trim();
-  if (!/^tribridge\s+(delegate|job)\b/.test(s)) return { ok: false, why: 'not a tribridge delegate/job command' };
+  if (!/^tribridge\s+(delegate|job|host)\b/.test(s)) return { ok: false, why: 'not a tribridge delegate/job/host command' };
   let quote = null;
   for (let i = 0; i < s.length; i++) {
     const c = s[i];

@@ -1,6 +1,6 @@
 ---
-description: Independent review of the current diff by Codex and Antigravity (Gemini) in parallel; you reconcile.
-argument-hint: "[--base <ref>] [--adversarial] [--to codex,agy] [-- paths]"
+description: Independent review of the current diff by the other two AI agents (of Claude Code, Codex, Antigravity) in parallel; you reconcile.
+argument-hint: "[--base <ref>] [--adversarial] [--to <a,b>] [-- paths]"
 ---
 
 Run `tribridge review $ARGUMENTS` from the repo root (it can take a few minutes; if your shell

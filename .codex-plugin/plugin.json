@@ -1,0 +1,20 @@
+{
+  "name": "tribridge",
+  "version": "0.3.0",
+  "description": "Delegate work to, and get independent reviews from, Claude Code and Google Antigravity (Gemini) from inside Codex.",
+  "author": { "name": "JoakoVRD-Designer" },
+  "homepage": "https://github.com/JoakoVRD-Designer/tribridge",
+  "repository": "https://github.com/JoakoVRD-Designer/tribridge",
+  "license": "MIT",
+  "keywords": ["claude-code", "antigravity", "gemini", "multi-agent", "delegation", "code-review"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "tribridge",
+    "shortDescription": "Delegate to and cross-review with Claude and Gemini",
+    "longDescription": "Hand bulky, well-specified work to Claude Code or Antigravity (Gemini), or get an independent review of your diff from both in parallel, then verify what comes back. Uses the claude and agy CLIs you already have signed in.",
+    "developerName": "JoakoVRD-Designer",
+    "category": "Developer Tools",
+    "capabilities": ["Read", "Write"],
+    "websiteURL": "https://github.com/JoakoVRD-Designer/tribridge"
+  }
+}

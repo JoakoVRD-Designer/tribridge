@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0 — 2026-09-24
+
+- Native plugin in all three hosts: Codex (`codex plugin marketplace add JoakoVRD-Designer/tribridge`,
+  via `.codex-plugin/plugin.json` + `.agents/plugins/marketplace.json`) and Antigravity
+  (`agy plugin install <clone>`, via `plugin.json`), alongside the Claude Code plugin.
+- `tribridge install codex|agy` now runs those native installers instead of linking skills by hand.
+- Commands and the delegate subagent are host-neutral (agy loads them too) and check `tribridge host` first.
+- Codex CLI is found in the npm folder even when it is not on PATH.
+
 ## 0.2.0 — 2026-09-24
 
 - `tribridge models [agent]`: the models each agent can actually run (live from `codex debug models` and `agy models`; Claude aliases and ids).
