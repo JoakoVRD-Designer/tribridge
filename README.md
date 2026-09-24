@@ -116,7 +116,8 @@ personal de `trustedWorkspaces` en `~/.gemini/antigravity-cli/settings.json`.
 ### Códigos de salida
 
 `0` ok · `1` uso · `2` falló el agente · `3` respuesta vacía · `10` cuota o límite de uso · `11` sin sesión ·
-`12` timeout · `13` no se encuentra la CLI · `14` delegación anidada rechazada · `15` permiso denegado
+`12` timeout · `13` no se encuentra la CLI · `14` delegación anidada rechazada · `15` permiso denegado ·
+`16` el sandbox del propio agente que llama bloqueó el lanzamiento (en Codex: aprueba ejecutarlo fuera del sandbox)
 
 Cada llamada deja en stderr una línea `TRIBRIDGE_USAGE {…}` con el agente, el modelo, el tiempo y los tokens.
 Con `TRIBRIDGE_USAGE_LOG=<archivo>` (o `usageLog` en la config) además se guarda en ese archivo.
