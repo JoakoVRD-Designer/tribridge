@@ -54,7 +54,7 @@ tribridge install agy       # ~/.gemini/config/skills.json  += este repo
 ```
 
 Después reinicia Claude Code. El plugin trae el skill, los comandos `/tribridge:delegate`,
-`/tribridge:review`, `/tribridge:jobs` y `/tribridge:doctor`, el subagente `tribridge-delegate`
+`/tribridge:review`, `/tribridge:model`, `/tribridge:jobs` y `/tribridge:doctor`, el subagente `tribridge-delegate`
 y un hook de inicio de sesión que le recuerda a Claude que puede delegar.
 Para desactivar ese recordatorio: `TRIBRIDGE_POLICY=off`.
 
@@ -93,8 +93,24 @@ y el skill `tribridge` hace el resto.
 | `balanced` (defecto) | sonnet | effort medium | Gemini 3.8 Flash (High) |
 | `deep` (defecto en `review`) | opus, effort high | effort high | Gemini 3.1 Pro (High) |
 
-Se cambian en `~/.tribridge/config.json` (`tribridge config` muestra la ruta y los valores).
-`--model` y `--effort` sobrescriben el tier para una sola llamada.
+### Cambiar de modelo en cada IA
+
+```bash
+tribridge models                              # modelos disponibles de las 3 (lista real de cada CLI; * = en uso)
+tribridge model set codex gpt-6-astra         # Codex usa GPT-6 Astra en todos los tiers (queda guardado)
+tribridge model set agy gemini-3.1-pro-high --tier deep
+tribridge model set claude opus --effort high
+tribridge model                               # qué modelo y esfuerzo usa cada una
+tribridge model reset                         # volver a los valores por defecto
+```
+
+Desde Claude Code: `/tribridge:model codex gpt-6-astra`, o simplemente "usa GPT-6 Astra en Codex".
+Valida contra la lista real de modelos (y los niveles de esfuerzo que admite cada modelo); `--force` lo salta.
+
+Para una sola llamada: `--model` / `--effort`. En `review`, por agente:
+`tribridge review --model codex=gpt-6-astra,agy=gemini-3.1-pro-high`.
+
+Se guarda en `~/.tribridge/config.json`.
 
 ### Modos: qué impone cada agente (medido, sin maquillar)
 
@@ -136,7 +152,7 @@ Con `TRIBRIDGE_USAGE_LOG=<archivo>` (o `usageLog` en la config) además se guard
 ## Pruebas
 
 ```bash
-npm test     # 19 pruebas con agentes falsos: sin red y sin gastar tokens
+npm test     # 21 pruebas con agentes falsos: sin red y sin gastar tokens
 ```
 
 Probado también contra los agentes reales (claude 2.1.281, codex 0.156.1, agy 1.2.9):

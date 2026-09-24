@@ -48,6 +48,22 @@ ID=$(tribridge job start --to agy --tier deep "…")
 tribridge job status $ID ; tribridge job result $ID
 ```
 
+## Choosing the model of each agent
+
+Each agent has three tiers (`fast`, `balanced` = default, `deep` = default for reviews), each with a model and a reasoning effort.
+When the user asks to switch models ("use GPT-6 Astra in Codex", "Gemini Pro for everything", "Claude Opus for reviews"):
+
+```bash
+tribridge models codex                                  # exact ids available (* = in use)
+tribridge model set codex gpt-6-astra                   # every tier; saved for later calls
+tribridge model set agy gemini-3.1-pro-high --tier deep # only one tier
+tribridge model set claude opus --effort high
+tribridge model                                         # show the current choice
+tribridge model reset codex                             # back to defaults
+```
+
+For one call only, pass `--model` / `--effort` (with several reviewers: `--model codex=gpt-6-astra,agy=gemini-3.1-pro-high`).
+
 Options: `--tier fast|balanced|deep` · `--mode read|write|yolo` · `--dir <path>` ·
 `--model <exact>` · `--timeout 10m` · `--raw` (no digest contract) · `--dry-run`.
 
@@ -55,9 +71,10 @@ Always pass `--dir` for repo work so the other agent reads real files — never 
 large files into the task. Write the task so it stands alone: the other agent does not
 see this conversation. Say what "done" looks like.
 
-**Modes.** `read` cannot write. `write` edits files inside `--dir` (for `agy`, this needs a
-`write_file(<dir>)` rule in `~/.gemini/antigravity-cli/settings.json`; without one the run
-comes back exit 15). `yolo` auto-approves *everything on the whole machine* — only on a
+**Modes.** `read` cannot write (enforced for claude and codex; for `agy` it is an instruction,
+so check the git footer). `write` edits files inside `--dir` (`agy` writes only where the folder
+is in its `trustedWorkspaces` or has a `write_file(<dir>)` rule in
+`~/.gemini/antigravity-cli/settings.json`; otherwise exit 15). `yolo` auto-approves *everything on the whole machine* — only on a
 throwaway branch, and only if the user agreed.
 
 **Long tasks.** If your shell tool has a time limit (Claude Code's is about 2 minutes by
