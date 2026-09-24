@@ -81,4 +81,9 @@ a dump", don't ingest it whole — ask again for a digest.
 
 `0` ok · `2` failed · `3` empty · `10` quota/rate limit (try another agent) · `11` not signed in
 (`tribridge doctor` shows the fix) · `12` timeout (raise `--timeout` or narrow the task) ·
-`13` CLI missing · `14` nested delegation refused (a delegate cannot delegate again) · `15` permission denied.
+`13` CLI missing · `14` nested delegation refused (a delegate cannot delegate again) · `15` permission denied ·
+`16` **your own sandbox** blocked launching the other agent.
+
+**If you run inside a sandbox (e.g. Codex):** `tribridge` must start another program outside the
+workspace, and that program needs the network. Run `tribridge` commands with escalated / unsandboxed
+permissions (ask the user to approve) from the start. On exit `16`, rerun the same command that way.
