@@ -72,6 +72,7 @@ test('childEnv strips session markers and tokens, keeps config', () => {
 test('gate allows one tribridge command and nothing else', () => {
   assert.ok(isAllowed('tribridge delegate --to agy "fix a; b | c"').ok);
   assert.ok(isAllowed("tribridge job start --to codex 'use $HOME literally'").ok);
+  assert.ok(isAllowed('tribridge host').ok);
   for (const bad of [
     'tribridge delegate --to agy x; rm -rf ~',
     'tribridge delegate --to agy "$(cat ~/.ssh/id_rsa)"',

@@ -1,0 +1,8 @@
+{
+  "name": "tribridge",
+  "version": "0.3.0",
+  "description": "Delegate work to, and get independent reviews from, Claude Code and OpenAI Codex from inside Antigravity.",
+  "author": { "name": "JoakoVRD-Designer" },
+  "repository": "https://github.com/JoakoVRD-Designer/tribridge",
+  "license": "MIT"
+}

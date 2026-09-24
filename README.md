@@ -33,34 +33,58 @@ Esto es una reimplementación que sirve en las tres direcciones.
 
 - Node ≥ 18
 - Al menos **dos** de: [Claude Code](https://claude.com/claude-code), [Codex CLI](https://github.com/openai/codex),
-  [Antigravity CLI](https://antigravity.google/docs/cli-using) (`agy`), instalados y con la sesión iniciada.
+  [Antigravity CLI](https://antigravity.google/docs/cli-using) (`agy`), instalados y con **tu** sesión iniciada.
 
 ## Instalación
 
-```powershell
-git clone https://github.com/JoakoVRD-Designer/tribridge.git
-cd tribridge
-npm install -g .            # pone `tribridge` en el PATH (para Codex y agy)
-tribridge doctor            # ¿están los 3 agentes, con sesión y con el skill?
-tribridge install codex     # ~/.codex/skills/tribridge  → enlace a este repo
-tribridge install agy       # ~/.gemini/config/skills.json  += este repo
-```
+Es un plugin nativo de las tres herramientas: instálalo en la que uses (o en las tres),
+con el instalador de esa misma herramienta.
 
-**Claude Code** (los plugins se instalan desde dentro de Claude Code):
-
+**Claude Code**: en el prompt de Claude Code:
 ```
 /plugin marketplace add JoakoVRD-Designer/tribridge
 /plugin install tribridge@tribridge
 ```
 
-Después reinicia Claude Code. El plugin trae el skill, los comandos `/tribridge:delegate`,
-`/tribridge:review`, `/tribridge:model`, `/tribridge:jobs` y `/tribridge:doctor`, el subagente `tribridge-delegate`
-y un hook de inicio de sesión que le recuerda a Claude que puede delegar.
-Para desactivar ese recordatorio: `TRIBRIDGE_POLICY=off`.
+**Codex**: en una terminal:
+```bash
+codex plugin marketplace add JoakoVRD-Designer/tribridge
+codex plugin add tribridge@tribridge
+```
 
-Desinstalar: `tribridge uninstall all`, `/plugin uninstall tribridge@tribridge` y `npm uninstall -g tribridge`.
+**Antigravity (agy)**: agy solo instala plugins desde una carpeta, así que primero clonas el repo:
+```bash
+git clone https://github.com/JoakoVRD-Designer/tribridge.git
+agy plugin install ./tribridge
+```
 
-Los skills quedan como **enlaces** al repo: si editas `skills/tribridge/SKILL.md`, los tres hosts ven el cambio.
+Reinicia la herramienta después de instalar. Listo: dile en lenguaje natural "pídele a Codex una
+segunda opinión", "que Gemini lo busque en la web", "usa GPT-6 Astra en Codex"…
+
+**Opcional**: el comando `tribridge` en tu terminal (para usarlo a mano, o para instalar en
+Codex y agy de una vez):
+```bash
+git clone https://github.com/JoakoVRD-Designer/tribridge.git && cd tribridge
+npm install -g .
+tribridge install codex agy    # ejecuta por ti los instaladores nativos de arriba
+tribridge doctor               # qué agentes están listos, con sesión y con el plugin
+```
+
+Cada plugin trae su propia copia del código, así que el skill funciona aunque `tribridge` no esté
+en el PATH. En Claude Code además trae los comandos `/tribridge:delegate`, `/tribridge:review`,
+`/tribridge:model`, `/tribridge:jobs` y `/tribridge:doctor`, el subagente `tribridge-delegate` y un
+recordatorio al iniciar sesión (se desactiva con `TRIBRIDGE_POLICY=off`). En agy los comandos
+aparecen como skills.
+
+**Qué necesita cada persona:** la CLI de cada IA a la que quiera delegar, instalada y con **su propia**
+sesión iniciada (Node ≥ 18 también). tribridge no incluye acceso a ninguna IA, solo las conecta.
+Con dos de las tres ya funciona.
+
+**Actualizar:** Claude Code `/plugin marketplace update tribridge` · Codex `codex plugin marketplace upgrade tribridge` ·
+agy `git pull` y de nuevo `agy plugin install ./tribridge`.
+
+**Desinstalar:** `/plugin uninstall tribridge@tribridge` · `codex plugin remove tribridge@tribridge` ·
+`agy plugin uninstall tribridge` (o `tribridge uninstall all`).
 
 ## Uso
 
