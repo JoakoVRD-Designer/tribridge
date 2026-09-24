@@ -186,6 +186,28 @@ test('review sends the diff to every agent except the host', () => {
   assert.doesNotMatch(r.stdout, /## Claude Code/);
 });
 
+test('model set persists per tier, validates, and is used by later calls', () => {
+  const home = tmpdir();
+  const env = { ...childEnv(process.env), TRIBRIDGE_HOME: home, TRIBRIDGE_CLAUDE_BIN: FAKE, TRIBRIDGE_DEPTH: '' };
+  const run = (...a) => spawnSync(process.execPath, [CLI, ...a], { encoding: 'utf8', env });
+  assert.strictEqual(run('model', 'set', 'claude', 'claude-opus-5-5', '--tier', 'fast', '--effort', 'max').status, 0);
+  assert.notStrictEqual(run('model', 'set', 'claude', 'gpt-9').status, 0, 'unknown model rejected');
+  assert.notStrictEqual(run('model', 'set', 'claude', 'opus', '--effort', 'ultra').status, 0, 'unknown effort rejected');
+  const dry = run('delegate', '--to', 'claude', '--tier', 'fast', '--dry-run', 'x');
+  assert.match(dry.stdout, /--model claude-opus-5-5 --effort max/);
+  assert.match(run('delegate', '--to', 'claude', '--tier', 'deep', '--dry-run', 'x').stdout, /--model opus /, 'other tiers untouched');
+  run('model', 'reset', 'claude');
+  assert.match(run('delegate', '--to', 'claude', '--tier', 'fast', '--dry-run', 'x').stdout, /--model haiku /);
+});
+
+test('per-agent --model map sends each reviewer its own model', () => {
+  const r = cli(['delegate', '--to', 'codex', '--model', 'codex=gpt-x,agy=gem-y', '--dry-run', 'x'], { kind: 'codex' });
+  assert.match(r.stdout, /-m gpt-x/);
+  assert.doesNotMatch(r.stdout, /gem-y/);
+  const bad = cli(['review', '--to', 'codex,agy', '--model', 'gpt-x'], { kind: 'codex' });
+  assert.notStrictEqual(bad.status, 0);
+});
+
 test('background job: start, then collect the result', async () => {
   const home = tmpdir();
   const env = { ...childEnv(process.env), TRIBRIDGE_HOME: home, TRIBRIDGE_CODEX_BIN: FAKE, FAKE_KIND: 'codex', FAKE_BEHAVIOR: 'ok', TRIBRIDGE_DEPTH: '' };

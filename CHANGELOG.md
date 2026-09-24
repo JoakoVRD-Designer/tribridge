@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0 — 2026-09-24
+
+- `tribridge models [agent]`: the models each agent can actually run (live from `codex debug models` and `agy models`; Claude aliases and ids).
+- `tribridge model set|show|reset`: switch each agent's model and effort, per tier or all tiers, saved in `~/.tribridge/config.json`; unknown models and unsupported effort levels are rejected.
+- `/tribridge:model` command in Claude Code.
+- `--model` / `--effort` accept a per-agent map (`codex=…,agy=…`); `review` no longer sends one agent's model to every reviewer.
+
 ## 0.1.0 — 2026-09-23
 
 - First version: `delegate`, `review`, `job`, `doctor`, `install`, `host`, `config`.

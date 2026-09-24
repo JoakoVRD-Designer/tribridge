@@ -10,6 +10,7 @@ const { AGENTS, LABEL } = require('../lib/agents');
 const { detectHost } = require('../lib/host');
 const jobs = require('../lib/jobs');
 const inst = require('../lib/install');
+const { listModels, setModel, resetModels, TIERS } = require('../lib/models');
 
 const USAGE = `tribridge — let Claude Code, Codex and Antigravity (agy) delegate to each other.
 
@@ -18,6 +19,11 @@ Usage:
   tribridge review   [--to <a,b>|others] [--base <ref>] [--adversarial] [--dir .] [-- paths...]
   tribridge job start --to <agent> [options] "<task>"   background delegation, prints a job id
   tribridge job status [id] | job result <id> | job cancel <id>
+  tribridge models [agent]                                list the models each agent can run (* = in use)
+  tribridge model [show]                                  which model/effort each agent uses per tier
+  tribridge model set <agent> <model|default> [--tier fast|balanced|deep|all] [--effort <level>]
+                                                          switch an agent's model (default: every tier); saved
+  tribridge model reset [agent|all]                       back to the built-in defaults
   tribridge doctor                                        check CLIs, sign-in, skill registration
   tribridge install  codex|agy|claude|all                 register the shared skill with a host
   tribridge uninstall codex|agy|all
@@ -31,8 +37,9 @@ Delegate options:
   --mode read|write|yolo      read (default): no writes · write: edit files in --dir ·
                               yolo: auto-approve everything, machine-wide — throwaway branch only
   --dir <path>                workspace the agent works in (defaults to cwd)
-  --model <name>              exact model, overrides the tier
-  --effort <level>            reasoning effort, overrides the tier
+  --model <name>              exact model for this call only, overrides the tier
+                              (per agent: --model codex=gpt-6-astra,agy=gemini-3.1-pro-high)
+  --effort <level>            reasoning effort for this call only (same per-agent form)
   --timeout <10m|600s|600>    wall-clock limit (default from config: 600s)
   --raw                       don't append the digest-only output contract
   --json                      print the result as JSON
@@ -68,6 +75,18 @@ function resolveTargets(spec) {
   return list;
 }
 
+function perAgent(value, flag) {
+  if (!value) return () => undefined;
+  if (!value.includes('=')) return () => value;
+  const map = {};
+  for (const part of value.split(',')) {
+    const [agent, v] = part.split('=').map((s) => s.trim());
+    if (!AGENTS.includes(agent) || !v) die(`bad ${flag} "${part}" (use agent=value, agent one of ${AGENTS.join('|')})`);
+    map[agent] = v;
+  }
+  return (agent) => map[agent];
+}
+
 function parseDelegateArgs(argv, cfg) {
   const o = { tier: 'balanced', mode: 'read', timeoutSec: cfg.timeoutSec, raw: false, json: false, dryRun: false, rest: [] };
   const need = (i) => { if (i + 1 >= argv.length) die(`${argv[i]} needs a value`); return argv[i + 1]; };
@@ -94,6 +113,9 @@ function parseDelegateArgs(argv, cfg) {
     }
   }
   if (!['fast', 'balanced', 'deep'].includes(o.tier)) die(`bad --tier "${o.tier}"`);
+  // --model / --effort accept either one value or a per-agent map: codex=gpt-6-astra,agy=gemini-3.1-pro-high
+  o.modelFor = perAgent(o.model, '--model');
+  o.effortFor = perAgent(o.effort, '--effort');
   if (!['read', 'write', 'yolo'].includes(o.mode)) die(`bad --mode "${o.mode}"`);
   if (o.dir && !fs.existsSync(o.dir)) die(`--dir does not exist: ${o.dir}`);
   o.dir = o.dir || process.cwd();
@@ -128,7 +150,8 @@ async function cmdDelegate(argv, cfg) {
   if (task === '-') task = readStdin();
   else if (!process.stdin.isTTY && o.rest.length === 0) task = readStdin();
   if (!task.trim()) die('no task given');
-  const r = await delegate({ ...o, to: targets[0], prompt: task }, cfg);
+  const to = targets[0];
+  const r = await delegate({ ...o, to, model: o.modelFor(to), effort: o.effortFor(to), prompt: task }, cfg);
   printResult(r, o);
   if (o.jobDir) jobs.writeJobExit(o.jobDir, r.exit);
   return r.exit;
@@ -173,7 +196,12 @@ async function cmdReview(argv, cfg) {
   ].filter((l) => l !== '').join('\n');
 
   const tier = argv.includes('--tier') ? o.tier : 'deep';
-  const results = await Promise.all(targets.map((to) => delegate({ ...o, to, tier, mode: 'read', raw: true, prompt }, cfg)));
+  if (o.model && !o.model.includes('=') && targets.length > 1) {
+    die('review has several reviewers: give --model per agent, e.g. --model codex=gpt-6-astra,agy=gemini-3.1-pro-high');
+  }
+  const results = await Promise.all(targets.map((to) => delegate({
+    ...o, to, tier, mode: 'read', raw: true, prompt, model: o.modelFor(to), effort: o.effortFor(to),
+  }, cfg)));
   let ok = 0;
   targets.forEach((to, i) => {
     printResult(results[i], o, `\n## ${LABEL[to]} [${to}]`);
@@ -225,6 +253,93 @@ async function cmdJob(argv) {
   die('job start|status|result|cancel');
 }
 
+function showTiers(cfg, agents) {
+  const lines = [];
+  for (const a of agents) {
+    lines.push(`${LABEL[a]} [${a}]`);
+    for (const t of TIERS) {
+      const v = cfg.tiers[a][t] || {};
+      lines.push(`  ${t.padEnd(9)} model: ${(v.model || '(agent default)').padEnd(28)} effort: ${v.effort || '(default)'}`);
+    }
+  }
+  return lines.join('\n');
+}
+
+async function cmdModels(argv, cfg) {
+  const agents = argv[0] ? resolveTargets(argv[0]) : AGENTS;
+  const lists = await Promise.all(agents.map((a) => listModels(a)));
+  agents.forEach((a, i) => {
+    const { models, efforts, note } = lists[i];
+    const inUse = new Map();
+    for (const t of TIERS) {
+      const m = cfg.tiers[a][t] && cfg.tiers[a][t].model;
+      if (m) inUse.set(m, [...(inUse.get(m) || []), t]);
+    }
+    process.stdout.write(`\n${LABEL[a]} [${a}]${note ? `  — ${note}` : ''}\n`);
+    for (const m of models) {
+      const used = inUse.get(m.id);
+      const eff = m.efforts && m.efforts.length ? `  effort: ${m.efforts.join('/')}` : '';
+      process.stdout.write(`  ${used ? '*' : ' '} ${m.id.padEnd(30)} ${m.name}${eff}${used ? `   ← ${used.join(', ')}` : ''}\n`);
+    }
+    if (efforts) process.stdout.write(`  effort levels: ${efforts.join(', ')}\n`);
+  });
+  process.stdout.write('\n* = used by a tier.  Change with: tribridge model set <agent> <model> [--tier fast|balanced|deep|all] [--effort <level>]\n');
+  return 0;
+}
+
+async function cmdModel(argv, cfg) {
+  const [sub, ...rest] = argv;
+  if (!sub || sub === 'show') {
+    process.stdout.write(`${showTiers(cfg, rest[0] ? resolveTargets(rest[0]) : AGENTS)}\n\nconfig: ${configPath()}\n`);
+    return 0;
+  }
+  if (sub === 'reset') {
+    const agents = !rest[0] || rest[0] === 'all' ? AGENTS : resolveTargets(rest[0]);
+    resetModels(agents);
+    process.stdout.write(`${showTiers(loadConfig(), agents)}\n`);
+    return 0;
+  }
+  if (sub !== 'set') die('model [show [agent]] | model set <agent> <model|default> [--tier …] [--effort …] | model reset [agent|all]');
+
+  let tierArg = 'all';
+  let effort;
+  let force = false;
+  const pos = [];
+  for (let i = 0; i < rest.length; i++) {
+    if (rest[i] === '--tier') tierArg = rest[++i];
+    else if (rest[i] === '--effort') effort = rest[++i];
+    else if (rest[i] === '--force') force = true;
+    else pos.push(rest[i]);
+  }
+  const [agent, modelArg] = pos;
+  if (!AGENTS.includes(agent) || (modelArg === undefined && effort === undefined)) {
+    die('usage: tribridge model set <claude|codex|agy> <model|default> [--tier fast|balanced|deep|all] [--effort <level>|default]');
+  }
+  const tiers = tierArg === 'all' ? TIERS : [tierArg];
+  if (!tiers.every((t) => TIERS.includes(t))) die(`bad --tier "${tierArg}"`);
+
+  const { models, efforts } = await listModels(agent);
+  let model;
+  if (modelArg !== undefined) {
+    model = modelArg === 'default' ? null : modelArg;
+    if (model && models.length && !force) {
+      const hit = models.find((m) => m.id === model || m.name.toLowerCase() === model.toLowerCase());
+      if (!hit) die(`"${model}" is not in ${agent}'s model list. See \`tribridge models ${agent}\`, or add --force.`);
+      model = hit.id;
+    }
+  }
+  if (effort !== undefined) {
+    effort = effort === 'default' ? null : effort;
+    const allowed = (model && (models.find((m) => m.id === model) || {}).efforts) || efforts;
+    if (effort && allowed && allowed.length && !allowed.includes(effort) && !force) {
+      die(`effort "${effort}" is not supported here (use ${allowed.join('/')}), or add --force.`);
+    }
+  }
+  setModel(agent, tiers, { model, effort });
+  process.stdout.write(`${showTiers(loadConfig(), [agent])}\n`);
+  return 0;
+}
+
 function cmdInstall(argv, remove) {
   const which = argv[0] === 'all' ? ['codex', 'agy', 'claude'] : argv;
   if (!which.length) die(`${remove ? 'uninstall' : 'install'} codex|agy|claude|all`);
@@ -256,6 +371,8 @@ async function main() {
       process.stdout.write(`${r.text}\n`);
       return r.ok ? 0 : 2;
     }
+    case 'models': return cmdModels(argv, cfg);
+    case 'model': return cmdModel(argv, cfg);
     case 'install': return cmdInstall(argv, false);
     case 'uninstall': return cmdInstall(argv, true);
     case 'host': {
