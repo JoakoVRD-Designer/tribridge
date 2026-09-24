@@ -38,7 +38,8 @@ Esto es una reimplementación que sirve en las tres direcciones.
 ## Instalación
 
 ```powershell
-cd C:\Users\pc\tribridge
+git clone https://github.com/JoakoVRD-Designer/tribridge.git
+cd tribridge
 npm install -g .            # pone `tribridge` en el PATH (para Codex y agy)
 tribridge doctor            # ¿están los 3 agentes, con sesión y con el skill?
 tribridge install codex     # ~/.codex/skills/tribridge  → enlace a este repo
@@ -48,7 +49,7 @@ tribridge install agy       # ~/.gemini/config/skills.json  += este repo
 **Claude Code** (los plugins se instalan desde dentro de Claude Code):
 
 ```
-/plugin marketplace add C:\Users\pc\tribridge
+/plugin marketplace add JoakoVRD-Designer/tribridge
 /plugin install tribridge@tribridge
 ```
 
@@ -106,7 +107,7 @@ Se cambian en `~/.tribridge/config.json` (`tribridge config` muestra la ruta y l
 `yolo` aprueba **todo en toda la máquina**, no solo en `--dir`. Úsalo solo en una rama desechable.
 
 **agy no tiene un modo de solo lectura que se pueda imponer en modo no interactivo.**
-Medido con agy 1.2.9: con `trustedWorkspaces: ["C:\\Users\\pc"]`, agy escribe sin pedir permiso,
+Medido con agy 1.2.9: con la carpeta personal en `trustedWorkspaces`, agy escribe sin pedir permiso,
 y `--mode plan` hace que devuelva una respuesta vacía para cualquier tarea. Por eso `tribridge`
 le antepone una instrucción de solo lectura (en las pruebas la respetó 2 de 2 veces), y el pie de
 git avisa si igual cambió algo. Si quieres que agy de verdad no pueda escribir, saca tu carpeta
@@ -120,7 +121,7 @@ personal de `trustedWorkspaces` en `~/.gemini/antigravity-cli/settings.json`.
 Cada llamada deja en stderr una línea `TRIBRIDGE_USAGE {…}` con el agente, el modelo, el tiempo y los tokens.
 Con `TRIBRIDGE_USAGE_LOG=<archivo>` (o `usageLog` en la config) además se guarda en ese archivo.
 
-## Detalles de Windows (medidos en esta máquina)
+## Detalles de Windows (medidos en Windows 11)
 
 - `agy -p` lanzado desde Node, con stdin cerrado y sin shell, **no se cuelga**. El cuelgue del
   original venía de lanzarlo desde Git Bash.
