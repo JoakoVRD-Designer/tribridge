@@ -1,0 +1,14 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "tribridge",
+  "description": "Claude Code ⇄ Codex ⇄ Antigravity delegation and cross-review.",
+  "owner": { "name": "joakovrd" },
+  "plugins": [
+    {
+      "name": "tribridge",
+      "description": "Delegate to and cross-review with Codex and Antigravity (Gemini).",
+      "source": "./",
+      "category": "ai"
+    }
+  ]
+}

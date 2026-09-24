@@ -1,0 +1,8 @@
+{
+  "name": "tribridge",
+  "version": "0.1.0",
+  "description": "Delegate work to, and get independent reviews from, OpenAI Codex and Google Antigravity (Gemini) from inside Claude Code. The same skill works inside Codex and Antigravity pointing the other way.",
+  "author": { "name": "joakovrd" },
+  "license": "MIT",
+  "keywords": ["codex", "antigravity", "gemini", "multi-agent", "delegation", "cross-review"]
+}

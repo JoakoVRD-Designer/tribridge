@@ -1,0 +1,3 @@
+#!/bin/sh
+# POSIX / Git Bash entry point (Claude Code puts a plugin's bin/ on PATH).
+exec node "$(dirname "$0")/tribridge.js" "$@"
