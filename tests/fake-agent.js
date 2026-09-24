@@ -44,6 +44,16 @@ function run() {
       process.stderr.write('Not logged in. Please run login.\n');
       process.exit(1);
       break;
+    case 'flaky': {
+      const marker = `${process.env.FAKE_RECORD}.flaky`;
+      if (!fs.existsSync(marker)) {
+        fs.writeFileSync(marker, '1');
+        process.stderr.write('Eligibility check failed: Get "https://example/userinfo": EOF\n');
+        process.exit(1);
+      }
+      reply('DONE');
+      break;
+    }
     case 'agy-denied':
       process.stdout.write(JSON.stringify({ status: 'SUCCESS', response: '', denied_actions: [{ tool: 'write_file' }] }));
       break;

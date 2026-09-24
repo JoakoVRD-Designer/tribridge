@@ -1,6 +1,6 @@
 {
   "name": "tribridge",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Let Claude Code, OpenAI Codex and Google Antigravity (agy) delegate work and cross-review each other. One core, three hosts, native Windows.",
   "bin": { "tribridge": "bin/tribridge.js" },
   "scripts": { "test": "node --test tests/tribridge.test.js" },

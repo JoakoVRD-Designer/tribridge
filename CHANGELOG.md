@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.1 — 2026-09-24
+
+- agy: told to use its file tools instead of the terminal when commands are not granted. Measured on
+  agy 1.2.9: Flash tried a terminal command first, was auto-denied and ended with no reply (exit 15,
+  3/3 runs); with the instruction it answered 3/3.
+- One automatic retry on transient network errors (e.g. agy's sign-in check failing with `EOF`), only
+  when nothing was produced and no file changed.
+- Footer now shows `[tribridge] workspace: <dir>`, and warns when `--dir` is Antigravity's scratch
+  folder (its terminal starts there, so `--dir .` typed inside agy missed the project). The skill asks
+  for an absolute project path.
+
 ## 0.3.0 — 2026-09-24
 
 - Native plugin in all three hosts: Codex (`codex plugin marketplace add JoakoVRD-Designer/tribridge`,

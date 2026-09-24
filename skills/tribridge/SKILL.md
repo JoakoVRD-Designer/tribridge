@@ -34,14 +34,14 @@ Do **not** delegate small, quick, or judgement-heavy tasks — do those yourself
 
 ```bash
 # one task, one agent (read-only by default)
-tribridge delegate --to agy --tier fast "Map every call site of parseConfig in this repo; file:line list only."
+tribridge delegate --to agy --tier fast --dir C:/work/shop "Map every call site of parseConfig in this repo; file:line list only."
 
 # let it edit files in the workspace
-tribridge delegate --to codex --mode write --dir . "Add unit tests for src/cart.ts covering the empty-cart and discount cases."
+tribridge delegate --to codex --mode write --dir C:/work/shop "Add unit tests for src/cart.ts covering the empty-cart and discount cases."
 
 # independent review of the current diff by every other agent, in parallel
-tribridge review                       # uncommitted changes (else the last commit)
-tribridge review --base main --adversarial
+tribridge review --dir C:/work/shop    # uncommitted changes (else the last commit)
+tribridge review --dir C:/work/shop --base main --adversarial
 
 # long task: run in the background, keep working, collect later
 ID=$(tribridge job start --to agy --tier deep "…")
@@ -67,8 +67,10 @@ For one call only, pass `--model` / `--effort` (with several reviewers: `--model
 Options: `--tier fast|balanced|deep` · `--mode read|write|yolo` · `--dir <path>` ·
 `--model <exact>` · `--timeout 10m` · `--raw` (no digest contract) · `--dry-run`.
 
-Always pass `--dir` for repo work so the other agent reads real files — never paste
-large files into the task. Write the task so it stands alone: the other agent does not
+Always pass `--dir <absolute path of the project>` for repo work so the other agent reads real
+files — never paste large files into the task. Use an absolute path, not `.`: your terminal may
+not start in the project (Antigravity's starts in its own scratch folder). The footer line
+`[tribridge] workspace: …` shows the folder the other agent actually worked in. Write the task so it stands alone: the other agent does not
 see this conversation. Say what "done" looks like.
 
 **Modes.** `read` cannot write (enforced for claude and codex; for `agy` it is an instruction,

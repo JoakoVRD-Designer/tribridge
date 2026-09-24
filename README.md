@@ -176,7 +176,7 @@ Con `TRIBRIDGE_USAGE_LOG=<archivo>` (o `usageLog` en la config) además se guard
 ## Pruebas
 
 ```bash
-npm test     # 21 pruebas con agentes falsos: sin red y sin gastar tokens
+npm test     # 23 pruebas con agentes falsos: sin red y sin gastar tokens
 ```
 
 Probado también contra los agentes reales (claude 2.1.281, codex 0.156.1, agy 1.2.9):
