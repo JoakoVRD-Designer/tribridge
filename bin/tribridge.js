@@ -39,7 +39,8 @@ Delegate options:
   --dry-run                   print the resolved command, run nothing
 
 Exit codes: 0 ok · 1 usage · 2 agent failed · 3 empty reply · 10 quota · 11 auth ·
-            12 timeout · 13 CLI missing · 14 nested delegation refused · 15 permission denied`;
+            12 timeout · 13 CLI missing · 14 nested delegation refused · 15 permission denied ·
+            16 blocked by the calling agent's own sandbox`;
 
 function die(msg, code = EXIT.usage) {
   process.stderr.write(`tribridge: ${msg}\n`);
